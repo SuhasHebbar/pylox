@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from .token import Token
 from .token_type import TokenType as TT
@@ -97,7 +97,6 @@ class Scanner:
         else:
             raise Exception(f'Invalid character {c}.')
 
-
     def add_token(self, token: TT, literal = None):
         lexeme = self.get_lexeme()
         self.tokens.append(Token(token, lexeme, literal, self.line))
@@ -106,15 +105,14 @@ class Scanner:
         return self.source[self.start: self.current]
 
     def consume_digits(self):
-        while (not self.at_end()) and self.peek().isnumeric():
+        while (peek := self.peek()) is not None and peek.isnumeric():
             self.advance()
 
-    def peek(self):
+    def peek(self) -> Optional[str]:
         if self.at_end():
             return None
         else:
             return self.source[self.current]
-
 
     def match(self, c: str):
         if self.at_end():
