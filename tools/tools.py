@@ -10,15 +10,19 @@ expr_template = [
 ]
 
 
-def main(argv: Sized):
+def main(argv):
 
     # Assumes that the generate AST script is called as `python {scrip_name} {file_name}`
     if len(argv) != 2:
-        print('Usage: python {scrip_name} {file_name})', file=sys.stderr)
+        print('Usage: python {script_name} {file_name})', file=sys.stderr)
         sys.exit(1)
 
     with open(argv[1], 'w') as ofile:
-        ast = 'from abc import ABC, abstractmethod'
+        ast = '''from abc import ABC, abstractmethod
+from typing import Any
+from lox.token import Token
+'''
+        ast += '\n\n'
         ast += generate_ast_types('Expr', expr_template)
         ofile.write(ast)
 
@@ -26,11 +30,9 @@ def main(argv: Sized):
 
 def generate_ast_types(parent_class, templates: List[str]) -> str:
     parent_class_declaration = f'''
-
-
 class {parent_class}(ABC):
     @abstractmethod
-    def accept(self, operation: {parent_class}Operation):
+    def perform_operation(self, operation: {parent_class}Operation):
         pass
 
 
@@ -51,8 +53,8 @@ class {parent_class}(ABC):
             class_template += f'        self.{attr_name} = {attr_name}\n'
 
         class_template += '\n'
-        class_template += f'''    def accept(self, operation: {parent_class}Operation):
-        operation.on{class_}(self)
+        class_template += f'''    def perform_operation(self, operation: {parent_class}Operation):
+        return operation.on{class_}(self)
 '''
         ast += class_template
         ast += '\n\n'
@@ -62,7 +64,6 @@ class {parent_class}(ABC):
         ast_pre += f'   @abstractmethod\n'
         ast_pre += f'   def on{class_}(self, {class_.lower()}):\n'
         ast_pre += f'       pass\n\n'
-    ast_pre += '\n'
     ast_pre += ast
 
     return ast_pre

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Any
-
 from lox.token import Token
 
 
@@ -24,7 +23,7 @@ class ExprOperation(ABC):
 
 class Expr(ABC):
     @abstractmethod
-    def accept(self, operation: ExprOperation):
+    def perform_operation(self, operation: ExprOperation):
         pass
 
 
@@ -32,8 +31,8 @@ class Literal(Expr):
     def __init__(self, value: Any):
         self.value = value
 
-    def accept(self, operation: ExprOperation):
-        operation.onLiteral(self)
+    def perform_operation(self, operation: ExprOperation):
+        return operation.onLiteral(self)
 
 
 class Unary(Expr):
@@ -41,8 +40,8 @@ class Unary(Expr):
         self.operator = operator
         self.expr = expr
 
-    def accept(self, operation: ExprOperation):
-        operation.onUnary(self)
+    def perform_operation(self, operation: ExprOperation):
+        return operation.onUnary(self)
 
 
 class Binary(Expr):
@@ -51,15 +50,15 @@ class Binary(Expr):
         self.left = left
         self.right = right
 
-    def accept(self, operation: ExprOperation):
-        operation.onBinary(self)
+    def perform_operation(self, operation: ExprOperation):
+        return operation.onBinary(self)
 
 
 class Grouping(Expr):
     def __init__(self, expr: Expr):
         self.expr = expr
 
-    def accept(self, operation: ExprOperation):
-        operation.onGrouping(self)
+    def perform_operation(self, operation: ExprOperation):
+        return operation.onGrouping(self)
 
 

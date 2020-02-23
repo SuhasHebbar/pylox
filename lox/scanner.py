@@ -5,12 +5,13 @@ from .token_type import TokenType as TT
 
 
 class Scanner:
-    def __init__(self, source: str):
+    def __init__(self, source: str, error_reporter):
         self.source = source
         self.tokens: List[Token] = []
         self.start = 0
         self.current = 0
         self.line = 1
+        self.error_reporter = error_reporter
 
     def scan_tokens(self) -> List[Token]:
         while not self.at_end():
@@ -95,7 +96,7 @@ class Scanner:
         elif c in [' ', '\r', '\t']:
             pass
         else:
-            raise Exception(f'Invalid character {c}.')
+            self.error_reporter.error(self.line, f'Invalid character {c}.')
 
     def add_token(self, token: TT, literal = None):
         lexeme = self.get_lexeme()
@@ -116,7 +117,7 @@ class Scanner:
 
     def match(self, c: str):
         if self.at_end():
-            raise Exception('Currently past the end of string. No more characters to scan')
+            return False
 
         if self.source[self.current] == c:
             self.current += 1
@@ -126,7 +127,7 @@ class Scanner:
 
     def advance(self):
         if self.at_end():
-            raise Exception('Currently past the end of string. No more characters to scan')
+            self.error_reporter.error(self.line, 'Currently past the end of string. No more characters to scan')
 
         self.current += 1
         return self.source[self.current - 1]
