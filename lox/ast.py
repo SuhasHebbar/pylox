@@ -4,21 +4,21 @@ from lox.token import Token
 
 
 class ExprOperation(ABC):
-   @abstractmethod
-   def onLiteral(self, literal):
-       pass
+    @abstractmethod
+    def on_literal(self, literal):
+        pass
 
-   @abstractmethod
-   def onUnary(self, unary):
-       pass
+    @abstractmethod
+    def on_unary(self, unary):
+        pass
 
-   @abstractmethod
-   def onBinary(self, binary):
-       pass
+    @abstractmethod
+    def on_binary(self, binary):
+        pass
 
-   @abstractmethod
-   def onGrouping(self, grouping):
-       pass
+    @abstractmethod
+    def on_grouping(self, grouping):
+        pass
 
 
 class Expr(ABC):
@@ -32,7 +32,7 @@ class Literal(Expr):
         self.value = value
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onLiteral(self)
+        return operation.on_literal(self)
 
 
 class Unary(Expr):
@@ -41,7 +41,7 @@ class Unary(Expr):
         self.expr = expr
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onUnary(self)
+        return operation.on_unary(self)
 
 
 class Binary(Expr):
@@ -51,7 +51,7 @@ class Binary(Expr):
         self.right = right
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onBinary(self)
+        return operation.on_binary(self)
 
 
 class Grouping(Expr):
@@ -59,6 +59,6 @@ class Grouping(Expr):
         self.expr = expr
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onGrouping(self)
+        return operation.on_grouping(self)
 
 

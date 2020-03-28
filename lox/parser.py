@@ -17,6 +17,9 @@ class Parser:
         self.error_reporter = error_reporter
 
     def parse(self):
+        if len(self.tokens) <= 1:
+            return None
+
         try:
             return self.expression()
         except self.ParseError:
@@ -102,9 +105,9 @@ class Parser:
 
     def primary(self) -> Expr:
         if self.match(TT.FALSE):
-            return Literal(True)
-        elif self.match(TT.TRUE):
             return Literal(False)
+        elif self.match(TT.TRUE):
+            return Literal(True)
         elif self.match(TT.NIL):
             return Literal(None)
         elif self.match(TT.NUMBER, TT.STRING):
