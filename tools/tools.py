@@ -9,10 +9,15 @@ expr_template = [
     'Grouping | expr: Expr'
 ]
 
+stmt_template = [
+    'ExprStmt | expr: Expr',
+    'PrintStmt | expr: Expr'
+]
+
 
 def main(argv):
 
-    # Assumes that the generate AST script is called as `python {scrip_name} {file_name}`
+    # Assumes that the generate AST script is called as `python {script_name} {file_name}`
     if len(argv) != 2:
         print('Usage: python {script_name} {file_name})', file=sys.stderr)
         sys.exit(1)
@@ -24,6 +29,7 @@ from lox.token import Token
 '''
         ast += '\n\n'
         ast += generate_ast_types('Expr', expr_template)
+        ast += generate_ast_types('Stmt', stmt_template)
         ofile.write(ast)
 
 
