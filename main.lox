@@ -6,6 +6,7 @@ print a;
 print "Entering Block";
 {
     print a;
+    a = a + "!";
 }
 print "Leaving Block";
 
@@ -17,3 +18,11 @@ print "Entering Block";
 print "Leaving Block";
 
 print a;
+
+var val = "else";
+if (val == "if") {
+    print "In If.";
+} else {
+    print "In Else.";
+}
+

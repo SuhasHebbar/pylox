@@ -104,6 +104,10 @@ class StmtOperation(ABC):
    def on_block(self, block):
        pass
 
+   @abstractmethod
+   def on_if_else(self, ifelse):
+       pass
+
 
 class Stmt(ABC):
     @abstractmethod
@@ -142,5 +146,15 @@ class Block(Stmt):
 
     def perform_operation(self, operation: StmtOperation):
         return operation.on_block(self)
+
+
+class IfElse(Stmt):
+    def __init__(self, condition: Expr, then_statement: Stmt, else_statement: Stmt):
+        self.condition = condition
+        self.then_statement = then_statement
+        self.else_statement = else_statement
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_if_else(self)
 
 

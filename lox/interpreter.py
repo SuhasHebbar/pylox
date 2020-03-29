@@ -2,7 +2,7 @@ from typing import List
 
 from . import util
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block
+    Block, IfElse
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
@@ -12,6 +12,18 @@ class Interpreter(ExprOperation, StmtOperation):
     def __init__(self, error_reporter):
         self.error_reporter = error_reporter
         self.environment = Environment()
+
+    def on_if_else(self, ifelse: IfElse):
+        condition_val = self._evaluate(ifelse.condition)
+
+        if condition_val:
+            then_stmt = ifelse.then_statement
+            if then_stmt is not None:
+                then_stmt.perform_operation(self)
+        else:
+            else_stmt = ifelse.else_statement
+            if else_stmt is not None:
+                else_stmt.perform_operation(self)
 
     def on_block(self, block: Block):
         parent_env = self.environment

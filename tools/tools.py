@@ -16,7 +16,8 @@ stmt_template = [
     'Expression | expr: Expr',
     'Print | expr: Expr',
     'Var | name: Token, initializer: Expr',
-    'Block| statements: List[Stmt]'
+    'Block | statements: List[Stmt]',
+    'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt'
 ]
 
 camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')

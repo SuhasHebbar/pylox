@@ -1,7 +1,7 @@
 import sys
 from typing import List
 
-from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt
+from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse
 from .token import Token
 from .token_type import TokenType as TT
 
@@ -59,6 +59,10 @@ class Parser:
         stmt_type = None
         if self.match(TT.PRINT):
             stmt_type = Print
+        elif self.match(TT.LEFT_BRACE):
+            return self.block()
+        elif self.match(TT.IF):
+            return self.ifelse_statement()
         else:
             stmt_type = Expression
 
@@ -67,13 +71,25 @@ class Parser:
 
         return stmt_type(expr)
 
+    def ifelse_statement(self):
+        self.consume(TT.LEFT_PAREN, 'Expected opening parenthesis for conditional.')
+        condition = self.expression()
+        self.consume(TT.RIGHT_PAREN, 'Expected closing parenthesis for conditional.')
+
+        then_statement = self.statement()
+        else_statement = None
+
+        if self.match(TT.ELSE):
+            else_statement = self.statement()
+
+        return IfElse(condition, then_statement, else_statement)
+
     def declaration(self) -> Stmt:
         try:
             if self.match(TT.VAR):
                 return self.var_declaration()
-            elif self.match(TT.LEFT_BRACE):
-                return self.block()
-            return self.statement()
+            else:
+                return self.statement()
         except Parser.ParseError as e:
             self.synchronize()
             return None
