@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 from typing import List, Sized
@@ -6,13 +7,19 @@ expr_template = [
     'Literal | value: Any',
     'Unary | operator: Token, expr: Expr',
     'Binary | operator: Token, left: Expr, right: Expr',
-    'Grouping | expr: Expr'
+    'Grouping | expr: Expr',
+    'Variable | name: Token',
+    'Assign | identifier: Token, value: Expr'
 ]
 
 stmt_template = [
-    'ExprStmt | expr: Expr',
-    'PrintStmt | expr: Expr'
+    'Expression | expr: Expr',
+    'Print | expr: Expr',
+    'Var | name: Token, initializer: Expr',
+    'Block| statements: List[Stmt]'
 ]
+
+camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')
 
 
 def main(argv):
@@ -24,7 +31,7 @@ def main(argv):
 
     with open(argv[1], 'w') as ofile:
         ast = '''from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 from lox.token import Token
 '''
         ast += '\n\n'
@@ -60,7 +67,7 @@ class {parent_class}(ABC):
 
         class_template += '\n'
         class_template += f'''    def perform_operation(self, operation: {parent_class}Operation):
-        return operation.on{class_}(self)
+        return operation.on_{camelCase_to_snake_case(class_)}(self)
 '''
         ast += class_template
         ast += '\n\n'
@@ -68,11 +75,15 @@ class {parent_class}(ABC):
     ast_pre = f'class {parent_class}Operation(ABC):\n'
     for class_ in class_list:
         ast_pre += f'   @abstractmethod\n'
-        ast_pre += f'   def on{class_}(self, {class_.lower()}):\n'
+        ast_pre += f'   def on_{camelCase_to_snake_case(class_)}(self, {class_.lower()}):\n'
         ast_pre += f'       pass\n\n'
     ast_pre += ast
 
     return ast_pre
+
+
+def camelCase_to_snake_case(name: str):
+    return camelCase_to_snake_case_regex.sub('_', name).lower()
 
 
 if __name__ == '__main__':

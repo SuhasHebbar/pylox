@@ -1,7 +1,7 @@
 import sys
 from typing import List
 
-from .ast import Binary, Expr, Unary, Literal, Grouping
+from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt
 from .token import Token
 from .token_type import TokenType as TT
 
@@ -21,7 +21,10 @@ class Parser:
             return None
 
         try:
-            return self.expression()
+            statements = []
+            while not self.at_end():
+                statements.append(self.declaration())
+            return statements
         except self.ParseError:
             return None
         except Exception as e:
@@ -52,8 +55,62 @@ class Parser:
     def previous(self):
         return self.tokens[self.curr - 1]
 
+    def statement(self):
+        stmt_type = None
+        if self.match(TT.PRINT):
+            stmt_type = Print
+        else:
+            stmt_type = Expression
+
+        expr = self.expression()
+        self.consume(TT.SEMICOLON, 'Expected semicolon at end of statement.')
+
+        return stmt_type(expr)
+
+    def declaration(self) -> Stmt:
+        try:
+            if self.match(TT.VAR):
+                return self.var_declaration()
+            elif self.match(TT.LEFT_BRACE):
+                return self.block()
+            return self.statement()
+        except Parser.ParseError as e:
+            self.synchronize()
+            return None
+
+    def block(self) -> Block:
+        statements = []
+        while not self.check(TT.RIGHT_BRACE) and not self.at_end():
+            statements.append(self.declaration())
+
+        self.consume(TT.RIGHT_BRACE, 'Expected "}" at end of block')
+        return Block(statements)
+
+    def var_declaration(self) -> Var:
+        token = self.consume(TT.IDENTIFIER, 'Expected variable name.')
+        initializer = None
+
+        if self.match(TT.EQUAL):
+            initializer = self.expression()
+
+        self.consume(TT.SEMICOLON, 'Expected semicolon at end of statement')
+        return Var(token, initializer)
+
     def expression(self) -> Expr:
-        return self.equality()
+        return self.assign()
+
+    def assign(self) -> Expr:
+        expr = self.equality()
+        if self.match(TT.EQUAL):
+            if type(expr) is Variable:
+                assignment_expr = self.expression()
+                return Assign(expr.name, assignment_expr)
+            else:
+                raise self.error(self.previous(), 'Invalid assignment target')
+        else:
+            return expr
+
+
 
     def equality(self) -> Expr:
         expr = self.comparison()
@@ -116,16 +173,20 @@ class Parser:
             expr = self.expression()
             self.consume(TT.RIGHT_PAREN, 'Expected \')\'')
             return Grouping(expr)
+        elif self.match(TT.IDENTIFIER):
+            return Variable(self.previous())
         else:
             raise self.error(self.peek(), 'Expected Literal/Grouping.')
 
     def consume(self, type: TT, error_msg: str):
-        if not self.match(type):
+        if self.match(type):
+            return self.previous()
+        else:
             raise self.error(self.peek(), error_msg)
 
     def error(self, token: TT, msg: str):
         self.error_reporter.parser_error(token, msg)
-        return self.ParseError(msg)
+        return Parser.ParseError(msg)
 
     def synchronize(self):
         self.advance()

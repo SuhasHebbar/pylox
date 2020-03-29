@@ -1,1 +1,19 @@
-var language = "lox";
+print "Hello World!";
+
+var a = "global";
+print a;
+
+print "Entering Block";
+{
+    print a;
+}
+print "Leaving Block";
+
+print "Entering Block";
+{
+    var a = a + " -> " + "local";
+    print a;
+}
+print "Leaving Block";
+
+print a;

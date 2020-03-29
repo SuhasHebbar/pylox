@@ -1,23 +1,31 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 from lox.token import Token
 
 
 class ExprOperation(ABC):
    @abstractmethod
-   def onLiteral(self, literal):
+   def on_literal(self, literal):
        pass
 
    @abstractmethod
-   def onUnary(self, unary):
+   def on_unary(self, unary):
        pass
 
    @abstractmethod
-   def onBinary(self, binary):
+   def on_binary(self, binary):
        pass
 
    @abstractmethod
-   def onGrouping(self, grouping):
+   def on_grouping(self, grouping):
+       pass
+
+   @abstractmethod
+   def on_variable(self, variable):
+       pass
+
+   @abstractmethod
+   def on_assign(self, assign):
        pass
 
 
@@ -32,7 +40,7 @@ class Literal(Expr):
         self.value = value
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onLiteral(self)
+        return operation.on_literal(self)
 
 
 class Unary(Expr):
@@ -41,7 +49,7 @@ class Unary(Expr):
         self.expr = expr
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onUnary(self)
+        return operation.on_unary(self)
 
 
 class Binary(Expr):
@@ -51,7 +59,7 @@ class Binary(Expr):
         self.right = right
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onBinary(self)
+        return operation.on_binary(self)
 
 
 class Grouping(Expr):
@@ -59,16 +67,41 @@ class Grouping(Expr):
         self.expr = expr
 
     def perform_operation(self, operation: ExprOperation):
-        return operation.onGrouping(self)
+        return operation.on_grouping(self)
+
+
+class Variable(Expr):
+    def __init__(self, name: Token):
+        self.name = name
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_variable(self)
+
+
+class Assign(Expr):
+    def __init__(self, identifier: Token, value: Expr):
+        self.identifier = identifier
+        self.value = value
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_assign(self)
 
 
 class StmtOperation(ABC):
    @abstractmethod
-   def onExprStmt(self, exprstmt):
+   def on_expression(self, expression):
        pass
 
    @abstractmethod
-   def onPrintStmt(self, printstmt):
+   def on_print(self, print):
+       pass
+
+   @abstractmethod
+   def on_var(self, var):
+       pass
+
+   @abstractmethod
+   def on_block(self, block):
        pass
 
 
@@ -78,19 +111,36 @@ class Stmt(ABC):
         pass
 
 
-class ExprStmt(Stmt):
+class Expression(Stmt):
     def __init__(self, expr: Expr):
         self.expr = expr
 
     def perform_operation(self, operation: StmtOperation):
-        return operation.onExprStmt(self)
+        return operation.on_expression(self)
 
 
-class PrintStmt(Stmt):
+class Print(Stmt):
     def __init__(self, expr: Expr):
         self.expr = expr
 
     def perform_operation(self, operation: StmtOperation):
-        return operation.onPrintStmt(self)
+        return operation.on_print(self)
+
+
+class Var(Stmt):
+    def __init__(self, name: Token, initializer: Expr):
+        self.name = name
+        self.initializer = initializer
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_var(self)
+
+
+class Block(Stmt):
+    def __init__(self, statements: List[Stmt]):
+        self.statements = statements
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_block(self)
 
 

@@ -16,21 +16,16 @@ class Lox:
         scanner = Scanner(code, self)
         tokens = scanner.scan_tokens()
 
-        # for token in tokens:
-        #     print(token)
-
         parser = Parser(tokens, self)
-        expr = parser.parse()
+        statements = parser.parse()
 
-        if self.had_error or expr is None:
+        if self.had_error or statements is None:
             return
         else:
             # print('Printing AST')
             # print(expr.perform_operation(AstPrinter()))
             # print('------------------------')
-            result = self.interpreter.evaluate(expr)
-            if not self.had_runtime_error:
-                print(result)
+            result = self.interpreter.evaluate(statements)
 
     def error(self, line: int, message: str):
         self.report(line, '', message)

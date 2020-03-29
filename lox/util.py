@@ -1,6 +1,6 @@
 def stringified(val):
     if isinstance(val, str):
-        return f'\'{val}\''
+        return f'{val}'
     elif isinstance(val, float):
         return f'{val:g}'
     elif isinstance(val, bool):

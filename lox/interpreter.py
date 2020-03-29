@@ -1,26 +1,60 @@
+from typing import List
+
 from . import util
-from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary
+from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
+    Block
+from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
 
 
-class Interpreter(ExprOperation):
+class Interpreter(ExprOperation, StmtOperation):
     def __init__(self, error_reporter):
         self.error_reporter = error_reporter
+        self.environment = Environment()
+
+    def on_block(self, block: Block):
+        parent_env = self.environment
+
+        # Create new environment on entering Block and overriede current environment
+        self.environment = Environment(parent_env)
+
+        try:
+            statements = block.statements
+            for statement in statements:
+                statement.perform_operation(self)
+        finally:
+            # Set environment back to parent environment on leaving block.
+            self.environment = parent_env
+
+    def on_assign(self, assign: Assign):
+        value = self._evaluate(assign.value)
+        self.environment.assign(assign.identifier, value)
+
+    def on_variable(self, variable: Variable):
+        return self.environment.get(variable.name)
+
+    def on_var(self, var: Var):
+        initializer_value = self._evaluate(var.initializer)
+        self.environment.define(var.name.lexeme, initializer_value)
 
     class RuntimeError(RuntimeError):
         def __init__(self, token: Token, msg: str):
             super(RuntimeError, self).__init__(msg)
             self.token = token
 
-    def evaluate(self, expr: Expr):
+    def evaluate(self, statements: List[Stmt]):
         try:
-            return util.stringified(self._evaluate(expr))
+            for statement in statements:
+                statement.perform_operation(self)
         except Interpreter.RuntimeError as e:
             self.error_reporter.runtime_error(e)
 
     def _evaluate(self, expr: Expr):
-        return expr.perform_operation(self)
+        if expr is not None:
+            return expr.perform_operation(self)
+        else:
+            return None
 
     def on_binary(self, binary: Binary):
         operator_token = binary.operator
@@ -77,6 +111,12 @@ class Interpreter(ExprOperation):
             return not expr_val
         else:
             raise Interpreter.RuntimeError(unary.operator, f'Unexpected {operator}. Expected - or !')
+
+    def on_print(self, printstmt):
+        print(util.stringified(self._evaluate(printstmt.expr)))
+
+    def on_expression(self, exprstmt):
+        self._evaluate(exprstmt.expr)
 
     @staticmethod
     def check_number_operands(operator: Token, lhs, rhs):
