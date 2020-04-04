@@ -9,7 +9,8 @@ expr_template = [
     'Binary | operator: Token, left: Expr, right: Expr',
     'Grouping | expr: Expr',
     'Variable | name: Token',
-    'Assign | identifier: Token, value: Expr'
+    'Assign | identifier: Token, value: Expr',
+    'Logical | operator: Token, left: Expr, right: Expr'
 ]
 
 stmt_template = [
@@ -17,7 +18,8 @@ stmt_template = [
     'Print | expr: Expr',
     'Var | name: Token, initializer: Expr',
     'Block | statements: List[Stmt]',
-    'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt'
+    'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt',
+    "WhileLoop | condition: Expr, body: Stmt"
 ]
 
 camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')

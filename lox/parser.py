@@ -1,7 +1,8 @@
 import sys
 from typing import List
 
-from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse
+from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
+    Logical, WhileLoop
 from .token import Token
 from .token_type import TokenType as TT
 
@@ -55,21 +56,64 @@ class Parser:
     def previous(self):
         return self.tokens[self.curr - 1]
 
-    def statement(self):
-        stmt_type = None
+    def statement(self) -> Stmt:
         if self.match(TT.PRINT):
-            stmt_type = Print
+            return self.print_statement()
         elif self.match(TT.LEFT_BRACE):
             return self.block()
         elif self.match(TT.IF):
             return self.ifelse_statement()
+        elif self.match(TT.WHILE):
+            return self.while_statement()
+        elif self.match(TT.FOR):
+            return self.for_statement()
         else:
-            stmt_type = Expression
+            return self.expr_statement()
 
+    def print_statement(self) -> Stmt:
         expr = self.expression()
         self.consume(TT.SEMICOLON, 'Expected semicolon at end of statement.')
+        return Print(expr)
 
-        return stmt_type(expr)
+    def expr_statement(self) -> Stmt:
+        expr = self.expression()
+        self.consume(TT.SEMICOLON, 'Expected semicolon at end of statement.')
+        return Expression(expr)
+
+
+    def for_statement(self):
+        self.consume(TT.LEFT_PAREN, 'Expected opening parenthesis for for loop.')
+        initializer = None
+        if self.match(TT.VAR):
+            initializer = self.var_declaration()
+        elif not self.match(TT.SEMICOLON):
+            initializer = self.expr_statement()
+
+        condition = Literal(True)
+
+        if not self.match(TT.SEMICOLON):
+            condition = self.expr_statement().expr
+
+        post_body_expr = None
+        if not self.check(TT.RIGHT_PAREN):
+            post_body_expr = self.expression()
+
+        self.consume(TT.RIGHT_PAREN, 'Expected closing parenthesis for for loop.')
+
+        body = self.statement()
+        body = Block([body, Expression(post_body_expr)])
+
+        while_loop = WhileLoop(condition, body)
+
+        return Block([initializer, while_loop])
+
+    def while_statement(self):
+        self.consume(TT.LEFT_PAREN, 'Expected opening parenthesis for while loop.')
+        condition = self.expression()
+        self.consume(TT.RIGHT_PAREN, 'Expected closing parenthesis for while loop.')
+
+        body = self.statement()
+        return WhileLoop(condition, body)
 
     def ifelse_statement(self):
         self.consume(TT.LEFT_PAREN, 'Expected opening parenthesis for conditional.')
@@ -116,7 +160,7 @@ class Parser:
         return self.assign()
 
     def assign(self) -> Expr:
-        expr = self.equality()
+        expr = self.or_()
         if self.match(TT.EQUAL):
             if type(expr) is Variable:
                 assignment_expr = self.expression()
@@ -126,7 +170,25 @@ class Parser:
         else:
             return expr
 
+    def or_(self) -> Expr:
+        expr = self.and_()
 
+        while self.match(TT.OR):
+            operator = self.previous()
+            rhs = self.and_()
+            expr = Logical(operator, expr, rhs)
+
+        return expr
+
+    def and_(self) -> Expr:
+        expr = self.equality()
+
+        while self.match(TT.AND):
+            operator = self.previous()
+            rhs = self.equality()
+            expr = Logical(operator, expr, rhs)
+
+        return expr
 
     def equality(self) -> Expr:
         expr = self.comparison()

@@ -2,7 +2,7 @@ from typing import List
 
 from . import util
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block, IfElse
+    Block, IfElse, Logical, WhileLoop
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
@@ -12,6 +12,31 @@ class Interpreter(ExprOperation, StmtOperation):
     def __init__(self, error_reporter):
         self.error_reporter = error_reporter
         self.environment = Environment()
+
+    def on_while_loop(self, whileloop: WhileLoop):
+        condition = whileloop.condition
+        body = whileloop.body
+
+        while self._evaluate(condition):
+            body.perform_operation(self)
+
+    def on_logical(self, logical: Logical):
+        lhs = self._evaluate(logical.left)
+        operator = logical.operator
+
+        if operator.type == TT.AND:
+            if lhs:
+                return self._evaluate(logical.right)
+            else:
+                return lhs
+        elif operator.type == TT.OR:
+            if lhs:
+                return lhs
+            else:
+                return self._evaluate(logical.right)
+        else:
+            raise Interpreter.RuntimeError(operator, 'Unexpected token in place of logical operator')
+
 
     def on_if_else(self, ifelse: IfElse):
         condition_val = self._evaluate(ifelse.condition)

@@ -28,6 +28,10 @@ class ExprOperation(ABC):
    def on_assign(self, assign):
        pass
 
+   @abstractmethod
+   def on_logical(self, logical):
+       pass
+
 
 class Expr(ABC):
     @abstractmethod
@@ -87,6 +91,16 @@ class Assign(Expr):
         return operation.on_assign(self)
 
 
+class Logical(Expr):
+    def __init__(self, operator: Token, left: Expr, right: Expr):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_logical(self)
+
+
 class StmtOperation(ABC):
    @abstractmethod
    def on_expression(self, expression):
@@ -106,6 +120,10 @@ class StmtOperation(ABC):
 
    @abstractmethod
    def on_if_else(self, ifelse):
+       pass
+
+   @abstractmethod
+   def on_while_loop(self, whileloop):
        pass
 
 
@@ -156,5 +174,14 @@ class IfElse(Stmt):
 
     def perform_operation(self, operation: StmtOperation):
         return operation.on_if_else(self)
+
+
+class WhileLoop(Stmt):
+    def __init__(self, condition: Expr, body: Stmt):
+        self.condition = condition
+        self.body = body
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_while_loop(self)
 
 
