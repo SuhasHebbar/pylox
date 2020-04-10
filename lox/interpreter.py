@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Any
 
 from . import util
+from .callable import Callable, Clock, LoxCallable
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block, IfElse, Logical, WhileLoop
+    Block, IfElse, Logical, WhileLoop, Call, Function
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
@@ -11,7 +12,29 @@ from .token_type import TokenType as TT
 class Interpreter(ExprOperation, StmtOperation):
     def __init__(self, error_reporter):
         self.error_reporter = error_reporter
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
+
+        self.globals.define('clock', Clock())
+
+    def on_function(self, function: Function):
+        name = function.name.lexeme
+        self.environment.define(name, LoxCallable(function))
+
+    def on_call(self, call: Call):
+        callee = self._evaluate(call.callee)
+
+        args = []
+        for arg in call.args:
+            args.append(self._evaluate(arg))
+
+        if not isinstance(callee, Callable):
+            raise Interpreter.RuntimeError(call.paren, 'Can only call functions or classes')
+
+        if len(args) != callee.arity():
+            raise Interpreter.RuntimeError(call.paren, f'Expected {callee.arity()} arguments but got {len(args)}.')
+
+        return callee.call(self, args)
 
     def on_while_loop(self, whileloop: WhileLoop):
         condition = whileloop.condition
@@ -37,7 +60,6 @@ class Interpreter(ExprOperation, StmtOperation):
         else:
             raise Interpreter.RuntimeError(operator, 'Unexpected token in place of logical operator')
 
-
     def on_if_else(self, ifelse: IfElse):
         condition_val = self._evaluate(ifelse.condition)
 
@@ -53,8 +75,13 @@ class Interpreter(ExprOperation, StmtOperation):
     def on_block(self, block: Block):
         parent_env = self.environment
 
-        # Create new environment on entering Block and overriede current environment
-        self.environment = Environment(parent_env)
+        # Create new environment on entering Block.
+        environment = Environment(parent_env)
+        self.execute_block(block, environment)
+
+    def execute_block(self, block, environment):
+        parent_env = self.environment
+        self.environment = environment
 
         try:
             statements = block.statements
@@ -63,6 +90,7 @@ class Interpreter(ExprOperation, StmtOperation):
         finally:
             # Set environment back to parent environment on leaving block.
             self.environment = parent_env
+
 
     def on_assign(self, assign: Assign):
         value = self._evaluate(assign.value)
@@ -169,6 +197,9 @@ class Interpreter(ExprOperation, StmtOperation):
             return
 
         raise Interpreter.RuntimeError(operator, f'Expected either only number or string operands for operator: {operator.lexeme}')
+
+
+
 
 
 

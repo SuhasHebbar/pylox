@@ -1,10 +1,15 @@
 import sys
+from enum import Enum
 from typing import List
 
 from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
-    Logical, WhileLoop
+    Logical, WhileLoop, Call, Function
 from .token import Token
 from .token_type import TokenType as TT
+
+
+class FunctionKind(Enum):
+    FUNCTION = 'function'
 
 
 class Parser:
@@ -80,7 +85,6 @@ class Parser:
         self.consume(TT.SEMICOLON, 'Expected semicolon at end of statement.')
         return Expression(expr)
 
-
     def for_statement(self):
         self.consume(TT.LEFT_PAREN, 'Expected opening parenthesis for for loop.')
         initializer = None
@@ -132,11 +136,32 @@ class Parser:
         try:
             if self.match(TT.VAR):
                 return self.var_declaration()
+            elif self.match(TT.FUN):
+                return self.function(FunctionKind.FUNCTION)
             else:
                 return self.statement()
         except Parser.ParseError as e:
             self.synchronize()
             return None
+
+    def function(self, kind: FunctionKind) -> Function:
+        ident = self.consume(TT.IDENTIFIER, f'Expect {kind.value} name')
+        self.consume(TT.LEFT_PAREN, f'Expect \'(\' after {kind.value} name')
+
+        args = []
+        if not self.check(TT.RIGHT_PAREN):
+            args.append(self.consume(TT.IDENTIFIER, 'Expect parameter name'))
+            while self.match(TT.COMMA):
+                if len(args) >= 255:
+                    self.error(self.peek(), 'Cannot have more than 255 parameters.')
+
+                args.append(self.consume(TT.IDENTIFIER, 'Expect parameter name'))
+
+        self.consume(TT.RIGHT_PAREN, 'Expect \')\' after parameters.')
+        self.consume(TT.LEFT_BRACE, f'Expect \'{{\' before {kind.value} body.')
+        body = self.block()
+
+        return Function(ident, args, body)
 
     def block(self) -> Block:
         statements = []
@@ -236,7 +261,31 @@ class Parser:
             rhs = self.unary()
             return Unary(operator, rhs)
         else:
-            return self.primary()
+            return self.call()
+
+    def call(self) -> Expr:
+        expr = self.primary()
+
+        while True:
+            if self.match(TT.LEFT_PAREN):
+                expr = self.finish_call(expr)
+            else:
+                break
+
+        return expr
+
+    def finish_call(self, expr: Expr) -> Expr:
+        args = []
+        if not self.check(TT.RIGHT_PAREN):
+            args.append(self.expression())
+            while self.match(TT.COMMA):
+                if len(args) >= 255:
+                    self.error(self.peek(), 'Cannot have more than 255 arguments')
+                args.append(self.expression())
+
+        paren = self.consume(TT.RIGHT_PAREN, 'Expect \')\' after arguments.')
+
+        return Call(expr, paren, args)
 
     def primary(self) -> Expr:
         if self.match(TT.FALSE):

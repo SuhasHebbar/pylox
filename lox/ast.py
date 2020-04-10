@@ -32,6 +32,10 @@ class ExprOperation(ABC):
    def on_logical(self, logical):
        pass
 
+   @abstractmethod
+   def on_call(self, call):
+       pass
+
 
 class Expr(ABC):
     @abstractmethod
@@ -101,6 +105,16 @@ class Logical(Expr):
         return operation.on_logical(self)
 
 
+class Call(Expr):
+    def __init__(self, callee: Expr, paren: Token, args: List[Expr]):
+        self.callee = callee
+        self.paren = paren
+        self.args = args
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_call(self)
+
+
 class StmtOperation(ABC):
    @abstractmethod
    def on_expression(self, expression):
@@ -116,6 +130,10 @@ class StmtOperation(ABC):
 
    @abstractmethod
    def on_block(self, block):
+       pass
+
+   @abstractmethod
+   def on_function(self, function):
        pass
 
    @abstractmethod
@@ -164,6 +182,16 @@ class Block(Stmt):
 
     def perform_operation(self, operation: StmtOperation):
         return operation.on_block(self)
+
+
+class Function(Stmt):
+    def __init__(self, name: Token, params: List[Token], body: Block):
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_function(self)
 
 
 class IfElse(Stmt):

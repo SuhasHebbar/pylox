@@ -10,7 +10,8 @@ expr_template = [
     'Grouping | expr: Expr',
     'Variable | name: Token',
     'Assign | identifier: Token, value: Expr',
-    'Logical | operator: Token, left: Expr, right: Expr'
+    'Logical | operator: Token, left: Expr, right: Expr',
+    'Call | callee: Expr, paren: Token, args: List[Expr]'
 ]
 
 stmt_template = [
@@ -18,6 +19,7 @@ stmt_template = [
     'Print | expr: Expr',
     'Var | name: Token, initializer: Expr',
     'Block | statements: List[Stmt]',
+    'Function | name: Token, params: List[Token], body: Block',
     'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt',
     "WhileLoop | condition: Expr, body: Stmt"
 ]
