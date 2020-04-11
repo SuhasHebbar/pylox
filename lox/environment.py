@@ -19,6 +19,9 @@ class Environment:
         else:
             raise lox.interpreter.Interpreter.RuntimeError(token, f'Undefined variable {name}.')
 
+    def assign_at(self, depth: int, token: Token, value):
+        self.ancestor(depth).assign(token, value)
+
     def get(self, token: Token):
         name = token.lexeme
         if name in self.values:
@@ -27,5 +30,14 @@ class Environment:
             return self.enclosing.get(token)
         else:
             raise lox.interpreter.Interpreter.RuntimeError(token, f'Undefined variable {name}.')
+
+    def get_at(self, depth, token: Token):
+        return self.ancestor(depth).get(token)
+
+    def ancestor(self, depth):
+        curr = self
+        for _ in range(depth):
+            curr = self.enclosing
+        return curr
 
 

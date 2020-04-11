@@ -4,6 +4,7 @@ from typing import List, Any
 
 from lox.ast import Function
 from lox.environment import Environment
+from lox.util import ReturnValue
 
 
 class Callable(ABC):
@@ -17,16 +18,20 @@ class Callable(ABC):
 
 
 class LoxCallable(Callable):
-    def __init__(self, declaration: Function):
+    def __init__(self, declaration: Function, environment: Environment):
         self.declaration = declaration
+        self.environment = environment
 
     def call(self, interpreter, args: List[Any]):
-        environment = Environment(interpreter.environment)
+        environment = Environment(self.environment)
 
         for token, expression in zip(self.declaration.params, args):
             environment.define(token.lexeme, expression)
 
-        interpreter.execute_block(self.declaration.body, environment)
+        try:
+            interpreter.execute_block(self.declaration.body, environment)
+        except ReturnValue as return_val:
+            return return_val.val
 
     def arity(self) -> int:
         return len(self.declaration.params)

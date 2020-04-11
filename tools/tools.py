@@ -21,7 +21,8 @@ stmt_template = [
     'Block | statements: List[Stmt]',
     'Function | name: Token, params: List[Token], body: Block',
     'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt',
-    "WhileLoop | condition: Expr, body: Stmt"
+    "WhileLoop | condition: Expr, body: Stmt",
+    'ReturnStmt | keyword: Token, value: Expr'
 ]
 
 camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')

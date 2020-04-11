@@ -1,15 +1,11 @@
 import sys
-from enum import Enum
 from typing import List
 
 from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
-    Logical, WhileLoop, Call, Function
+    Logical, WhileLoop, Call, Function, ReturnStmt
 from .token import Token
 from .token_type import TokenType as TT
-
-
-class FunctionKind(Enum):
-    FUNCTION = 'function'
+from .util import FunctionKind
 
 
 class Parser:
@@ -72,8 +68,19 @@ class Parser:
             return self.while_statement()
         elif self.match(TT.FOR):
             return self.for_statement()
+        elif self.match(TT.RETURN):
+            return self.return_statement()
         else:
             return self.expr_statement()
+
+    def return_statement(self) -> Stmt:
+        keyword = self.previous()
+        value_expr = Literal(None)
+        if not self.check(TT.SEMICOLON):
+            value_expr = self.expression()
+
+        self.consume(TT.SEMICOLON, 'Expect \';\' after return.')
+        return ReturnStmt(keyword, value_expr)
 
     def print_statement(self) -> Stmt:
         expr = self.expression()
@@ -125,7 +132,7 @@ class Parser:
         self.consume(TT.RIGHT_PAREN, 'Expected closing parenthesis for conditional.')
 
         then_statement = self.statement()
-        else_statement = None
+        else_statement = Expression(Literal(None))
 
         if self.match(TT.ELSE):
             else_statement = self.statement()

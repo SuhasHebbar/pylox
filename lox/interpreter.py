@@ -3,10 +3,11 @@ from typing import List, Any
 from . import util
 from .callable import Callable, Clock, LoxCallable
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block, IfElse, Logical, WhileLoop, Call, Function
+    Block, IfElse, Logical, WhileLoop, Call, Function, ReturnStmt
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
+from .util import ReturnValue
 
 
 class Interpreter(ExprOperation, StmtOperation):
@@ -14,12 +15,29 @@ class Interpreter(ExprOperation, StmtOperation):
         self.error_reporter = error_reporter
         self.globals = Environment()
         self.environment = self.globals
-
+        self.locals = {}
         self.globals.define('clock', Clock())
+
+    def on_return_stmt(self, returnstmt: ReturnStmt):
+        return_value = None
+        if returnstmt.value:
+            return_value = self._evaluate(returnstmt.value)
+
+        raise ReturnValue(return_value)
+
+    def resolve(self, expr: Expr, depth: int):
+        self.locals[expr] = depth
+
+    def lookup_variable(self, token: Token, expr: Expr):
+        if expr in self.locals:
+            depth = self.locals[expr]
+            return self.environment.get_at(depth, token)
+        else:
+            return self.globals.get(token)
 
     def on_function(self, function: Function):
         name = function.name.lexeme
-        self.environment.define(name, LoxCallable(function))
+        self.environment.define(name, LoxCallable(function, self.environment))
 
     def on_call(self, call: Call):
         callee = self._evaluate(call.callee)
@@ -91,13 +109,16 @@ class Interpreter(ExprOperation, StmtOperation):
             # Set environment back to parent environment on leaving block.
             self.environment = parent_env
 
-
     def on_assign(self, assign: Assign):
         value = self._evaluate(assign.value)
-        self.environment.assign(assign.identifier, value)
+        if assign in self.locals:
+            depth = self.locals[assign]
+            self.environment.assign_at(depth, assign.identifier, value)
+        else:
+            self.globals.assign(assign.identifier, value)
 
     def on_variable(self, variable: Variable):
-        return self.environment.get(variable.name)
+        return self.lookup_variable(variable.name, variable)
 
     def on_var(self, var: Var):
         initializer_value = self._evaluate(var.initializer)
@@ -197,6 +218,7 @@ class Interpreter(ExprOperation, StmtOperation):
             return
 
         raise Interpreter.RuntimeError(operator, f'Expected either only number or string operands for operator: {operator.lexeme}')
+
 
 
 

@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 def stringified(val):
     if isinstance(val, str):
         return f'{val}'
@@ -9,3 +12,13 @@ def stringified(val):
         return 'nil'
     else:
         return val
+
+
+class ReturnValue(Exception):
+    def __init__(self, val):
+        self.val = val
+
+
+class FunctionKind(Enum):
+    FUNCTION = 'function'
+    NONE = 'none'

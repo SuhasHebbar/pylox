@@ -144,6 +144,10 @@ class StmtOperation(ABC):
    def on_while_loop(self, whileloop):
        pass
 
+   @abstractmethod
+   def on_return_stmt(self, returnstmt):
+       pass
+
 
 class Stmt(ABC):
     @abstractmethod
@@ -211,5 +215,14 @@ class WhileLoop(Stmt):
 
     def perform_operation(self, operation: StmtOperation):
         return operation.on_while_loop(self)
+
+
+class ReturnStmt(Stmt):
+    def __init__(self, keyword: Token, value: Expr):
+        self.keyword = keyword
+        self.value = value
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_return_stmt(self)
 
 

@@ -12,7 +12,7 @@ print "Leaving Block";
 
 print "Entering Block";
 {
-    var a = a + " -> " + "local";
+    var a = "local";
     print a;
 }
 print "Leaving Block";
@@ -47,3 +47,38 @@ fun hello(name) {
 }
 
 hello("Suhas");
+
+fun retHello() {
+    return "Hello World!";
+}
+
+print retHello();
+
+fun fibonacci(n) {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}
+
+for (var i = 0; i < 20; i = i + 1) {
+  print fibonacci(i);
+}
+
+fun makeCounter() {
+    var i = 0;
+    fun count() {
+        i = i + 1;
+        print i;
+    }
+
+    return count;
+}
+
+var count = makeCounter();
+
+for (var i = 0; i < 10; i = i + 1) {
+    count();
+}
+

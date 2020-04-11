@@ -1,6 +1,7 @@
 from .ast_printer import AstPrinter
 from .interpreter import Interpreter
 from .parser import Parser
+from .resolver import Resolver
 from .scanner import Scanner
 from .token import Token
 from .token_type import TokenType as TT
@@ -19,13 +20,13 @@ class Lox:
         parser = Parser(tokens, self)
         statements = parser.parse()
 
+        resolver = Resolver(self.interpreter)
+        resolver.resolve_stmts(statements)
+
         if self.had_error or statements is None:
             return
         else:
-            # print('Printing AST')
-            # print(expr.perform_operation(AstPrinter()))
-            # print('------------------------')
-            result = self.interpreter.evaluate(statements)
+            self.interpreter.evaluate(statements)
 
     def error(self, line: int, message: str):
         self.report(line, '', message)
