@@ -1,10 +1,10 @@
-from .ast_printer import AstPrinter
 from .interpreter import Interpreter
 from .parser import Parser
 from .resolver import Resolver
 from .scanner import Scanner
 from .token import Token
 from .token_type import TokenType as TT
+from .util import LoxRuntimeError
 
 
 class Lox:
@@ -37,7 +37,7 @@ class Lox:
         else:
             self.report(token.line, f' at \'{token.lexeme}\'', msg)
 
-    def runtime_error(self, runtime_error: Interpreter.RuntimeError):
+    def runtime_error(self, runtime_error: LoxRuntimeError):
         print(f'{repr(runtime_error)} \n[line: {runtime_error.token.line}]')
         self.had_runtime_error = True
 

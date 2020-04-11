@@ -1,5 +1,6 @@
 from lox.token import Token
 import lox.interpreter
+from lox.util import LoxRuntimeError
 
 
 class Environment:
@@ -17,7 +18,7 @@ class Environment:
         elif self.enclosing is not None:
             self.enclosing.assign(token, value)
         else:
-            raise lox.interpreter.Interpreter.RuntimeError(token, f'Undefined variable {name}.')
+            raise LoxRuntimeError(token, f'Undefined variable {name}.')
 
     def assign_at(self, depth: int, token: Token, value):
         self.ancestor(depth).assign(token, value)
@@ -29,15 +30,17 @@ class Environment:
         elif self.enclosing is not None:
             return self.enclosing.get(token)
         else:
-            raise lox.interpreter.Interpreter.RuntimeError(token, f'Undefined variable {name}.')
+            raise LoxRuntimeError(token, f'Undefined variable \'{name}\'.')
 
-    def get_at(self, depth, token: Token):
-        return self.ancestor(depth).get(token)
+    def get_at(self, depth, name: str):
+        env = self.ancestor(depth).values
+        if name in env:
+            return env[name]
 
     def ancestor(self, depth):
         curr = self
         for _ in range(depth):
-            curr = self.enclosing
+            curr = curr.enclosing
         return curr
 
 

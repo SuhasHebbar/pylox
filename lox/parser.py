@@ -2,7 +2,7 @@ import sys
 from typing import List
 
 from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
-    Logical, WhileLoop, Call, Function, ReturnStmt
+    Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr
 from .token import Token
 from .token_type import TokenType as TT
 from .util import FunctionKind
@@ -75,7 +75,7 @@ class Parser:
 
     def return_statement(self) -> Stmt:
         keyword = self.previous()
-        value_expr = Literal(None)
+        value_expr = None
         if not self.check(TT.SEMICOLON):
             value_expr = self.expression()
 
@@ -145,6 +145,8 @@ class Parser:
                 return self.var_declaration()
             elif self.match(TT.FUN):
                 return self.function(FunctionKind.FUNCTION)
+            elif self.match(TT.CLASS):
+                return self.class_declaration()
             else:
                 return self.statement()
         except Parser.ParseError as e:
@@ -175,8 +177,20 @@ class Parser:
         while not self.check(TT.RIGHT_BRACE) and not self.at_end():
             statements.append(self.declaration())
 
-        self.consume(TT.RIGHT_BRACE, 'Expected "}" at end of block')
+        self.consume(TT.RIGHT_BRACE, 'Expect \'}\' at end of block.')
         return Block(statements)
+
+    def class_declaration(self) -> ClassDecl:
+        class_name = self.consume(TT.IDENTIFIER, 'Expect class name after \'class\'.')
+        self.consume(TT.LEFT_BRACE, 'Expect \'{\' before class body.')
+
+        methods = []
+        while not (self.check(TT.RIGHT_BRACE) or self.at_end()):
+            methods.append(self.function(FunctionKind.METHOD))
+
+        self.consume(TT.RIGHT_BRACE, 'Expect \'}\' after class body.')
+
+        return ClassDecl(class_name, methods)
 
     def var_declaration(self) -> Var:
         token = self.consume(TT.IDENTIFIER, 'Expected variable name.')
@@ -194,9 +208,11 @@ class Parser:
     def assign(self) -> Expr:
         expr = self.or_()
         if self.match(TT.EQUAL):
-            if type(expr) is Variable:
+            if isinstance(expr, Variable):
                 assignment_expr = self.expression()
                 return Assign(expr.name, assignment_expr)
+            elif isinstance(expr, Get):
+                return SetProp(expr.expr, expr.name, self.expression())
             else:
                 raise self.error(self.previous(), 'Invalid assignment target')
         else:
@@ -276,6 +292,9 @@ class Parser:
         while True:
             if self.match(TT.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TT.DOT):
+                ident = self.consume(TT.IDENTIFIER, 'Expect property name after \'.\'.')
+                expr = Get(expr, ident)
             else:
                 break
 
@@ -309,6 +328,8 @@ class Parser:
             return Grouping(expr)
         elif self.match(TT.IDENTIFIER):
             return Variable(self.previous())
+        elif self.match(TT.THIS):
+            return ThisExpr(self.previous())
         else:
             raise self.error(self.peek(), 'Expected Literal/Grouping.')
 
@@ -318,7 +339,7 @@ class Parser:
         else:
             raise self.error(self.peek(), error_msg)
 
-    def error(self, token: TT, msg: str):
+    def error(self, token: Token, msg: str):
         self.error_reporter.parser_error(token, msg)
         return Parser.ParseError(msg)
 

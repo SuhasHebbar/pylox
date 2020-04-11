@@ -1,10 +1,10 @@
 from typing import List
 
 from lox.ast import StmtOperation, ExprOperation, Block, Stmt, Var, Expr, Variable, Assign, Function, Unary, Binary, \
-    Grouping, Logical, Expression, Print, IfElse, WhileLoop, ReturnStmt, Call
+    Grouping, Logical, Expression, Print, IfElse, WhileLoop, ReturnStmt, Call, ClassDecl, Get, SetProp, ThisExpr
 from lox.interpreter import Interpreter
 from lox.token import Token
-from lox.util import FunctionKind
+from lox.util import FunctionKind, ClassType
 
 
 class Resolver(ExprOperation, StmtOperation):
@@ -13,6 +13,7 @@ class Resolver(ExprOperation, StmtOperation):
         self.error_reporter = interpreter.error_reporter
         self.scopes = []
         self.current_function = FunctionKind.NONE
+        self.current_class = ClassType.NONE
 
     def resolve_stmts(self, statements: List[Stmt]):
         for statement in statements:
@@ -60,6 +61,34 @@ class Resolver(ExprOperation, StmtOperation):
     def define(self, name: Token):
         if len(self.scopes) != 0:
             self.scopes[-1][name.lexeme] = True
+
+    def on_this_expr(self, thisexpr: ThisExpr):
+        if self.current_class is ClassType.NONE:
+            self.error_reporter.parser_error(thisexpr.keyword, 'Cannot use \'this\' outside a class.')
+
+        self.resolve_local(thisexpr, thisexpr.keyword)
+
+    def on_get(self, get: Get):
+        self.resolve_expr(get.expr)
+
+    def on_set_prop(self, setprop: SetProp):
+        self.resolve_expr(setprop.value)
+        self.resolve_expr(setprop.expr)
+
+    def on_class_decl(self, classdecl: ClassDecl):
+        self.declare(classdecl.name)
+        self.define(classdecl.name)
+
+        self.begin_scope()
+        self.current_class = ClassType.CLASS
+        self.scopes[-1]['this'] = True
+
+        for method in classdecl.methods:
+            function_kind = FunctionKind.INITIALIZER if method.name.lexeme == 'init' else FunctionKind.METHOD
+            self.resolve_function(method, function_kind)
+
+        self.current_class = ClassType.NONE
+        self.end_scope()
 
     def on_literal(self, literal):
         pass
@@ -133,5 +162,9 @@ class Resolver(ExprOperation, StmtOperation):
     def on_return_stmt(self, returnstmt: ReturnStmt):
         if self.current_function is FunctionKind.NONE:
             self.error_reporter.parser_error(returnstmt.keyword, 'Cannot return from top-level code.')
-        self.resolve_expr(returnstmt.value)
+
+        if returnstmt.value is not None:
+            if self.current_function is FunctionKind.INITIALIZER:
+                self.error_reporter.parser_error(returnstmt.keyword, 'Cannot return a value from an initializer.')
+            self.resolve_expr(returnstmt.value)
 

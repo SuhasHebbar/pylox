@@ -17,10 +17,22 @@ class Callable(ABC):
         pass
 
 
+class Clock(Callable):
+    def call(self, interpreter, args: List[Any]):
+        return int(time.time())
+
+    def arity(self) -> int:
+        return 0
+
+    def __str__(self):
+        return '<native_fn>'
+
+
 class LoxCallable(Callable):
-    def __init__(self, declaration: Function, environment: Environment):
+    def __init__(self, declaration: Function, environment: Environment, is_initializer: bool = False):
         self.declaration = declaration
         self.environment = environment
+        self.is_initializer = is_initializer
 
     def call(self, interpreter, args: List[Any]):
         environment = Environment(self.environment)
@@ -31,20 +43,21 @@ class LoxCallable(Callable):
         try:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnValue as return_val:
-            return return_val.val
+            if self.is_initializer:
+                return self.environment.get_at(0, 'this')
+            else:
+                return return_val.val
+
+        if self.is_initializer:
+            return self.environment.get_at(0, 'this')
+
+    def bind(self, instance):
+        env = Environment(self.environment)
+        env.define('this', instance)
+        return LoxCallable(self.declaration, env)
 
     def arity(self) -> int:
         return len(self.declaration.params)
 
     def __str__(self):
         return f'<function {self.declaration.name.lexeme}>'
-
-class Clock(Callable):
-    def call(self, interpreter, args: List[Any]):
-        return int(time.time())
-
-    def arity(self) -> int:
-        return 0
-
-    def __str__(self):
-        return '<native_fn>'

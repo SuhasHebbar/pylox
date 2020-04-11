@@ -36,6 +36,18 @@ class ExprOperation(ABC):
    def on_call(self, call):
        pass
 
+   @abstractmethod
+   def on_get(self, get):
+       pass
+
+   @abstractmethod
+   def on_set_prop(self, setprop):
+       pass
+
+   @abstractmethod
+   def on_this_expr(self, thisexpr):
+       pass
+
 
 class Expr(ABC):
     @abstractmethod
@@ -115,6 +127,33 @@ class Call(Expr):
         return operation.on_call(self)
 
 
+class Get(Expr):
+    def __init__(self, expr: Expr, name: Token):
+        self.expr = expr
+        self.name = name
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_get(self)
+
+
+class SetProp(Expr):
+    def __init__(self, expr: Expr, name: Token, value: Expr):
+        self.expr = expr
+        self.name = name
+        self.value = value
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_set_prop(self)
+
+
+class ThisExpr(Expr):
+    def __init__(self, keyword: Token):
+        self.keyword = keyword
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_this_expr(self)
+
+
 class StmtOperation(ABC):
    @abstractmethod
    def on_expression(self, expression):
@@ -146,6 +185,10 @@ class StmtOperation(ABC):
 
    @abstractmethod
    def on_return_stmt(self, returnstmt):
+       pass
+
+   @abstractmethod
+   def on_class_decl(self, classdecl):
        pass
 
 
@@ -224,5 +267,14 @@ class ReturnStmt(Stmt):
 
     def perform_operation(self, operation: StmtOperation):
         return operation.on_return_stmt(self)
+
+
+class ClassDecl(Stmt):
+    def __init__(self, name: Token, methods: List[Function]):
+        self.name = name
+        self.methods = methods
+
+    def perform_operation(self, operation: StmtOperation):
+        return operation.on_class_decl(self)
 
 

@@ -82,3 +82,54 @@ for (var i = 0; i < 10; i = i + 1) {
     count();
 }
 
+fun walk() {
+    print "Walking!";
+}
+
+var move = walk;
+move();
+
+class Dog {
+    bark() {
+        print "Bark!";
+    }
+
+    getDogProvider() {
+        fun dogProvider() {
+            return this;
+        }
+
+        return dogProvider;
+    }
+}
+
+print Dog;
+
+var dog = Dog();
+print dog;
+
+dog.howl = "Howl!";
+
+print dog.howl;
+dog.bark();
+
+var dogProvider = dog.getDogProvider();
+
+print dogProvider();
+
+class Rectangle {
+    init(width, height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    area() {
+        return this.width * this.height;
+    }
+}
+
+var rectangle = Rectangle(4, 1210);
+print "Rectangle";
+print rectangle.area();
+
+

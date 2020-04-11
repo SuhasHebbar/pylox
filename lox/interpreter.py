@@ -2,12 +2,13 @@ from typing import List, Any
 
 from . import util
 from .callable import Callable, Clock, LoxCallable
+from .lox_class import LoxClass, LoxInstance
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block, IfElse, Logical, WhileLoop, Call, Function, ReturnStmt
+    Block, IfElse, Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
-from .util import ReturnValue
+from .util import ReturnValue, LoxRuntimeError
 
 
 class Interpreter(ExprOperation, StmtOperation):
@@ -31,13 +32,34 @@ class Interpreter(ExprOperation, StmtOperation):
     def lookup_variable(self, token: Token, expr: Expr):
         if expr in self.locals:
             depth = self.locals[expr]
-            return self.environment.get_at(depth, token)
+            return self.environment.get_at(depth, token.lexeme)
         else:
             return self.globals.get(token)
+
+    def on_class_decl(self, classdecl: ClassDecl):
+        self.environment.define(classdecl.name.lexeme, None)
+
+        methods = {}
+        for method in classdecl.methods:
+            methods[method.name.lexeme] = LoxCallable(method, self.environment, method.name.lexeme == 'init')
+
+        klass = LoxClass(classdecl.name.lexeme, methods)
+        self.environment.assign(classdecl.name, klass)
+
+    def on_this_expr(self, thisexpr: ThisExpr):
+        return self.lookup_variable(thisexpr.keyword, thisexpr)
 
     def on_function(self, function: Function):
         name = function.name.lexeme
         self.environment.define(name, LoxCallable(function, self.environment))
+
+    def on_get(self, get: Get):
+        lhs = self._evaluate(get.expr)
+
+        if isinstance(lhs, LoxInstance):
+            return lhs.get(get.name)
+        else:
+            raise LoxRuntimeError(get.name, 'Only instances have properties.')
 
     def on_call(self, call: Call):
         callee = self._evaluate(call.callee)
@@ -47,10 +69,10 @@ class Interpreter(ExprOperation, StmtOperation):
             args.append(self._evaluate(arg))
 
         if not isinstance(callee, Callable):
-            raise Interpreter.RuntimeError(call.paren, 'Can only call functions or classes')
+            raise LoxRuntimeError(call.paren, 'Can only call functions or classes')
 
         if len(args) != callee.arity():
-            raise Interpreter.RuntimeError(call.paren, f'Expected {callee.arity()} arguments but got {len(args)}.')
+            raise LoxRuntimeError(call.paren, f'Expected {callee.arity()} arguments but got {len(args)}.')
 
         return callee.call(self, args)
 
@@ -76,7 +98,7 @@ class Interpreter(ExprOperation, StmtOperation):
             else:
                 return self._evaluate(logical.right)
         else:
-            raise Interpreter.RuntimeError(operator, 'Unexpected token in place of logical operator')
+            raise LoxRuntimeError(operator, 'Unexpected token in place of logical operator')
 
     def on_if_else(self, ifelse: IfElse):
         condition_val = self._evaluate(ifelse.condition)
@@ -124,16 +146,12 @@ class Interpreter(ExprOperation, StmtOperation):
         initializer_value = self._evaluate(var.initializer)
         self.environment.define(var.name.lexeme, initializer_value)
 
-    class RuntimeError(RuntimeError):
-        def __init__(self, token: Token, msg: str):
-            super(RuntimeError, self).__init__(msg)
-            self.token = token
 
     def evaluate(self, statements: List[Stmt]):
         try:
             for statement in statements:
                 statement.perform_operation(self)
-        except Interpreter.RuntimeError as e:
+        except LoxRuntimeError as e:
             self.error_reporter.runtime_error(e)
 
     def _evaluate(self, expr: Expr):
@@ -177,7 +195,7 @@ class Interpreter(ExprOperation, StmtOperation):
             Interpreter.check_number_operands(operator_token, lhs, rhs)
             return lhs * rhs
         else:
-            raise Interpreter.RuntimeError(binary.operator, f'Unexpected operand {operator}')
+            raise LoxRuntimeError(binary.operator, f'Unexpected operand {operator}')
 
     def on_grouping(self, grouping: Grouping):
         return self._evaluate(grouping.expr)
@@ -191,12 +209,12 @@ class Interpreter(ExprOperation, StmtOperation):
 
         if operator == TT.MINUS:
             if not isinstance(expr_val, float):
-                raise Interpreter.RuntimeError(unary.operator, 'Expected number for unary operator -.')
+                raise LoxRuntimeError(unary.operator, 'Expected number for unary operator -.')
             return -expr_val
         elif operator == TT.BANG:
             return not expr_val
         else:
-            raise Interpreter.RuntimeError(unary.operator, f'Unexpected {operator}. Expected - or !')
+            raise LoxRuntimeError(unary.operator, f'Unexpected {operator}. Expected - or !')
 
     def on_print(self, printstmt):
         print(util.stringified(self._evaluate(printstmt.expr)))
@@ -204,10 +222,20 @@ class Interpreter(ExprOperation, StmtOperation):
     def on_expression(self, exprstmt):
         self._evaluate(exprstmt.expr)
 
+    def on_set_prop(self, setprop: SetProp):
+        object = self._evaluate(setprop.expr)
+
+        if isinstance(object, LoxInstance):
+            val = self._evaluate(setprop.value)
+            object.set(setprop.name, val)
+            return val
+        else:
+            raise LoxRuntimeError(setprop.name, 'Only instances have fields.')
+
     @staticmethod
     def check_number_operands(operator: Token, lhs, rhs):
         if (not isinstance(lhs, float)) and (not isinstance(rhs, float)):
-            raise Interpreter.RuntimeError(operator, f'Expected number operands for operator: {operator.lexeme}')
+            raise LoxRuntimeError(operator, f'Expected number operands for operator: {operator.lexeme}')
 
     @staticmethod
     def check_numorstring_operands(operator: Token, lhs, rhs):
@@ -217,7 +245,7 @@ class Interpreter(ExprOperation, StmtOperation):
         if isinstance(lhs, str) and isinstance(rhs, str):
             return
 
-        raise Interpreter.RuntimeError(operator, f'Expected either only number or string operands for operator: {operator.lexeme}')
+        raise LoxRuntimeError(operator, f'Expected either only number or string operands for operator: {operator.lexeme}')
 
 
 
