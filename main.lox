@@ -132,4 +132,14 @@ var rectangle = Rectangle(4, 1210);
 print "Rectangle";
 print rectangle.area();
 
+class Square < Rectangle {
+    init(dim) {
+        super.init(dim, dim);
+    }
+}
+
+var square = Square(5);
+print "Printing area of a square.";
+print square.area();
+
 

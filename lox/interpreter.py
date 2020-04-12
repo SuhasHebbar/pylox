@@ -4,7 +4,7 @@ from . import util
 from .callable import Callable, Clock, LoxCallable
 from .lox_class import LoxClass, LoxInstance
 from .ast import Expr, ExprOperation, Binary, Grouping, Literal, Unary, StmtOperation, Stmt, Variable, Var, Assign, \
-    Block, IfElse, Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr
+    Block, IfElse, Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr, SuperExpr
 from .environment import Environment
 from .token import Token
 from .token_type import TokenType as TT
@@ -37,14 +37,40 @@ class Interpreter(ExprOperation, StmtOperation):
             return self.globals.get(token)
 
     def on_class_decl(self, classdecl: ClassDecl):
+        superclass = None
+        if classdecl.superclass is not None:
+            superclass = self._evaluate(classdecl.superclass)
+            if not isinstance(superclass, LoxClass):
+                raise LoxRuntimeError(classdecl.superclass.name, 'Superclass must be a class.')
+
         self.environment.define(classdecl.name.lexeme, None)
+
+        if superclass is not None:
+            self.environment = Environment(self.environment)
+            self.environment.define('super', superclass)
 
         methods = {}
         for method in classdecl.methods:
             methods[method.name.lexeme] = LoxCallable(method, self.environment, method.name.lexeme == 'init')
 
-        klass = LoxClass(classdecl.name.lexeme, methods)
+        klass = LoxClass(classdecl.name.lexeme, superclass, methods)
+        if superclass is not None:
+            self.environment = self.environment.enclosing
         self.environment.assign(classdecl.name, klass)
+
+    def on_super_expr(self, superexpr: SuperExpr):
+        depth = self.locals[superexpr]
+        superclass = self.environment.get_at(depth, 'super')
+        method = superclass.find_method(superexpr.method.lexeme)
+
+        if method is None:
+            raise LoxRuntimeError(superexpr.method, f'Undefined property \'{superexpr.method.lexeme}\'.')
+
+        instance = self.environment.get_at(depth - 1, 'this')
+        return method.bind(instance)
+
+
+
 
     def on_this_expr(self, thisexpr: ThisExpr):
         return self.lookup_variable(thisexpr.keyword, thisexpr)

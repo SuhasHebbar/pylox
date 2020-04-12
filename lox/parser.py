@@ -2,7 +2,7 @@ import sys
 from typing import List
 
 from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
-    Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr
+    Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr, SuperExpr
 from .token import Token
 from .token_type import TokenType as TT
 from .util import FunctionKind
@@ -182,6 +182,12 @@ class Parser:
 
     def class_declaration(self) -> ClassDecl:
         class_name = self.consume(TT.IDENTIFIER, 'Expect class name after \'class\'.')
+
+        superclass = None
+        if self.match(TT.LESS):
+            self.consume(TT.IDENTIFIER, 'Expect superclass name.')
+            superclass = Variable(self.previous())
+
         self.consume(TT.LEFT_BRACE, 'Expect \'{\' before class body.')
 
         methods = []
@@ -190,7 +196,7 @@ class Parser:
 
         self.consume(TT.RIGHT_BRACE, 'Expect \'}\' after class body.')
 
-        return ClassDecl(class_name, methods)
+        return ClassDecl(class_name, superclass, methods)
 
     def var_declaration(self) -> Var:
         token = self.consume(TT.IDENTIFIER, 'Expected variable name.')
@@ -330,6 +336,11 @@ class Parser:
             return Variable(self.previous())
         elif self.match(TT.THIS):
             return ThisExpr(self.previous())
+        elif self.match(TT.SUPER):
+            keyword = self.previous()
+            self.consume(TT.DOT, 'Expect \'.\' after \'super\'.')
+            method = self.consume(TT.IDENTIFIER, 'Expect superclass method name')
+            return SuperExpr(keyword, method)
         else:
             raise self.error(self.peek(), 'Expected Literal/Grouping.')
 

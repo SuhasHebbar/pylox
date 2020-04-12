@@ -7,8 +7,9 @@ from lox.util import LoxRuntimeError
 
 
 class LoxClass(Callable):
-    def __init__(self, name, methods: Dict[str, LoxCallable]):
+    def __init__(self, name, superclass, methods: Dict[str, LoxCallable]):
         self.methods = methods
+        self.superclass = superclass
         self.name = name
 
     def __str__(self):
@@ -32,7 +33,11 @@ class LoxClass(Callable):
         if name in self.methods:
             return self.methods[name]
         else:
-            return None
+            method = self.superclass.find_method(name) if self.superclass is not None else None
+            if method is not None:
+                return method
+            else:
+                return None
 
 
 class LoxInstance:

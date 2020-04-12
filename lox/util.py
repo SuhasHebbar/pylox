@@ -30,6 +30,7 @@ class FunctionKind(Enum):
 
 class ClassType(Enum):
     CLASS = 'class'
+    SUBCLASS = 'subclass'
     NONE = 'none'
 
 

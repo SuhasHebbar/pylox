@@ -48,6 +48,10 @@ class ExprOperation(ABC):
    def on_this_expr(self, thisexpr):
        pass
 
+   @abstractmethod
+   def on_super_expr(self, superexpr):
+       pass
+
 
 class Expr(ABC):
     @abstractmethod
@@ -152,6 +156,15 @@ class ThisExpr(Expr):
 
     def perform_operation(self, operation: ExprOperation):
         return operation.on_this_expr(self)
+
+
+class SuperExpr(Expr):
+    def __init__(self, keyword: Token, method: Token):
+        self.keyword = keyword
+        self.method = method
+
+    def perform_operation(self, operation: ExprOperation):
+        return operation.on_super_expr(self)
 
 
 class StmtOperation(ABC):
@@ -270,8 +283,9 @@ class ReturnStmt(Stmt):
 
 
 class ClassDecl(Stmt):
-    def __init__(self, name: Token, methods: List[Function]):
+    def __init__(self, name: Token, superclass: Variable, methods: List[Function]):
         self.name = name
+        self.superclass = superclass
         self.methods = methods
 
     def perform_operation(self, operation: StmtOperation):

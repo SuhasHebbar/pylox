@@ -1,7 +1,8 @@
 from typing import List
 
 from lox.ast import StmtOperation, ExprOperation, Block, Stmt, Var, Expr, Variable, Assign, Function, Unary, Binary, \
-    Grouping, Logical, Expression, Print, IfElse, WhileLoop, ReturnStmt, Call, ClassDecl, Get, SetProp, ThisExpr
+    Grouping, Logical, Expression, Print, IfElse, WhileLoop, ReturnStmt, Call, ClassDecl, Get, SetProp, ThisExpr, \
+    SuperExpr
 from lox.interpreter import Interpreter
 from lox.token import Token
 from lox.util import FunctionKind, ClassType
@@ -79,8 +80,18 @@ class Resolver(ExprOperation, StmtOperation):
         self.declare(classdecl.name)
         self.define(classdecl.name)
 
+        if classdecl.superclass is not None:
+            if classdecl.superclass.name.lexeme == classdecl.name.lexeme:
+                self.error_reporter.parser_error(classdecl.superclass.name, 'A class cannot inherit from itself.')
+            self.resolve_expr(classdecl.superclass)
+
+            self.begin_scope()
+            self.scopes[-1]['super'] = True
+
+
         self.begin_scope()
-        self.current_class = ClassType.CLASS
+
+        self.current_class = ClassType.CLASS if classdecl.superclass is None else ClassType.SUBCLASS
         self.scopes[-1]['this'] = True
 
         for method in classdecl.methods:
@@ -89,6 +100,15 @@ class Resolver(ExprOperation, StmtOperation):
 
         self.current_class = ClassType.NONE
         self.end_scope()
+        if classdecl.superclass is not None:
+            self.end_scope()
+
+    def on_super_expr(self, superexpr: SuperExpr):
+        if self.current_class is ClassType.NONE:
+            self.error_reporter.parser_error(superexpr.keyword, 'Cannot use \'super\' outside class.')
+        elif self.current_class is ClassType.CLASS:
+            self.error_reporter.parser_error(superexpr.keyword, 'Cannot use \'super\' in a class with no superclass.')
+        self.resolve_local(superexpr, superexpr.keyword)
 
     def on_literal(self, literal):
         pass

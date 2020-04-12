@@ -14,7 +14,8 @@ expr_template = [
     'Call | callee: Expr, paren: Token, args: List[Expr]',
     'Get | expr: Expr, name: Token',
     'SetProp | expr: Expr, name: Token, value: Expr',
-    'ThisExpr | keyword: Token'
+    'ThisExpr | keyword: Token',
+    'SuperExpr | keyword: Token, method: Token'
 ]
 
 stmt_template = [
@@ -26,7 +27,7 @@ stmt_template = [
     'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt',
     "WhileLoop | condition: Expr, body: Stmt",
     'ReturnStmt | keyword: Token, value: Expr',
-    'ClassDecl | name: Token, methods: List[Function]'
+    'ClassDecl | name: Token, superclass: Variable, methods: List[Function]'
 ]
 
 camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')
