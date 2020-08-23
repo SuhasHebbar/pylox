@@ -260,7 +260,7 @@ class Interpreter(ExprOperation, StmtOperation):
 
     @staticmethod
     def check_number_operands(operator: Token, lhs, rhs):
-        if (not isinstance(lhs, float)) and (not isinstance(rhs, float)):
+        if (not isinstance(lhs, float)) or (not isinstance(rhs, float)):
             raise LoxRuntimeError(operator, f'Expected number operands for operator: {operator.lexeme}')
 
     @staticmethod

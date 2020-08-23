@@ -19,7 +19,7 @@ class Callable(ABC):
 
 class Clock(Callable):
     def call(self, interpreter, args: List[Any]):
-        return int(time.time())
+        return float(time.time())
 
     def arity(self) -> int:
         return 0
