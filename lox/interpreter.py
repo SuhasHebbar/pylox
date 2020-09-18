@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Optional
 
 from . import util
 from .callable import Callable, Clock, LoxCallable
@@ -180,7 +180,7 @@ class Interpreter(ExprOperation, StmtOperation):
         except LoxRuntimeError as e:
             self.error_reporter.runtime_error(e)
 
-    def _evaluate(self, expr: Expr):
+    def _evaluate(self, expr: Optional[Expr]):
         if expr is not None:
             return expr.perform_operation(self)
         else:

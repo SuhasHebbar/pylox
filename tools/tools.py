@@ -21,13 +21,13 @@ expr_template = [
 stmt_template = [
     'Expression | expr: Expr',
     'Print | expr: Expr',
-    'Var | name: Token, initializer: Expr',
+    'Var | name: Token, initializer: Optional[Expr]',
     'Block | statements: List[Stmt]',
     'Function | name: Token, params: List[Token], body: Block',
     'IfElse | condition: Expr, then_statement: Stmt, else_statement: Stmt',
     "WhileLoop | condition: Expr, body: Stmt",
-    'ReturnStmt | keyword: Token, value: Expr',
-    'ClassDecl | name: Token, superclass: Variable, methods: List[Function]'
+    'ReturnStmt | keyword: Token, value: Optional[Expr]',
+    'ClassDecl | name: Token, superclass: Optional[Variable], methods: List[Function]'
 ]
 
 camelCase_to_snake_case_regex = re.compile(r'(?<!^)(?=[A-Z])')
@@ -42,7 +42,7 @@ def main(argv):
 
     with open(argv[1], 'w') as ofile:
         ast = '''from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Optional
 from lox.token import Token
 '''
         ast += '\n\n'

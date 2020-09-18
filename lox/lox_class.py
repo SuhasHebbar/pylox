@@ -43,7 +43,7 @@ class LoxClass(Callable):
 class LoxInstance:
     def __init__(self, klass: LoxClass):
         self.klass = klass
-        self.fields = {}
+        self.fields: Dict[str, Any] = {}
 
     def __str__(self):
         return f'<{str(self.klass)[1:-1]} instance>'

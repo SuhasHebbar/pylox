@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Optional
 
 from .ast import Binary, Expr, Unary, Literal, Grouping, Print, Expression, Var, Variable, Assign, Block, Stmt, IfElse, \
     Logical, WhileLoop, Call, Function, ReturnStmt, ClassDecl, Get, SetProp, ThisExpr, SuperExpr
@@ -25,7 +25,10 @@ class Parser:
         try:
             statements = []
             while not self.at_end():
-                statements.append(self.declaration())
+                declaration = self.declaration()
+                if declaration is not None:
+                    statements.append(declaration)
+
             return statements
         except self.ParseError:
             return None
@@ -139,7 +142,7 @@ class Parser:
 
         return IfElse(condition, then_statement, else_statement)
 
-    def declaration(self) -> Stmt:
+    def declaration(self) -> Optional[Stmt]:
         try:
             if self.match(TT.VAR):
                 return self.var_declaration()
@@ -175,7 +178,9 @@ class Parser:
     def block(self) -> Block:
         statements = []
         while not self.check(TT.RIGHT_BRACE) and not self.at_end():
-            statements.append(self.declaration())
+            declaration = self.declaration()
+            if declaration is not None:
+                statements.append(declaration)
 
         self.consume(TT.RIGHT_BRACE, 'Expect \'}\' at end of block.')
         return Block(statements)

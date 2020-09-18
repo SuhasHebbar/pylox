@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from lox.ast import StmtOperation, ExprOperation, Block, Stmt, Var, Expr, Variable, Assign, Function, Unary, Binary, \
     Grouping, Logical, Expression, Print, IfElse, WhileLoop, ReturnStmt, Call, ClassDecl, Get, SetProp, ThisExpr, \
@@ -12,7 +12,7 @@ class Resolver(ExprOperation, StmtOperation):
     def __init__(self, interpreter: Interpreter):
         self.interpreter = interpreter
         self.error_reporter = interpreter.error_reporter
-        self.scopes = []
+        self.scopes: List[Dict[str, bool]] = []
         self.current_function = FunctionKind.NONE
         self.current_class = ClassType.NONE
 

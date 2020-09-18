@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Optional
 from lox.token import Token
 
 
@@ -228,7 +228,7 @@ class Print(Stmt):
 
 
 class Var(Stmt):
-    def __init__(self, name: Token, initializer: Expr):
+    def __init__(self, name: Token, initializer: Optional[Expr]):
         self.name = name
         self.initializer = initializer
 
@@ -274,7 +274,7 @@ class WhileLoop(Stmt):
 
 
 class ReturnStmt(Stmt):
-    def __init__(self, keyword: Token, value: Expr):
+    def __init__(self, keyword: Token, value: Optional[Expr]):
         self.keyword = keyword
         self.value = value
 
@@ -283,7 +283,7 @@ class ReturnStmt(Stmt):
 
 
 class ClassDecl(Stmt):
-    def __init__(self, name: Token, superclass: Variable, methods: List[Function]):
+    def __init__(self, name: Token, superclass: Optional[Variable], methods: List[Function]):
         self.name = name
         self.superclass = superclass
         self.methods = methods
