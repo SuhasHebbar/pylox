@@ -5,51 +5,51 @@ from lox.token import Token
 
 class ExprOperation(ABC):
    @abstractmethod
-   def on_literal(self, literal):
+   def on_literal(self, literal: 'Literal'):
        pass
 
    @abstractmethod
-   def on_unary(self, unary):
+   def on_unary(self, unary: 'Unary'):
        pass
 
    @abstractmethod
-   def on_binary(self, binary):
+   def on_binary(self, binary: 'Binary'):
        pass
 
    @abstractmethod
-   def on_grouping(self, grouping):
+   def on_grouping(self, grouping: 'Grouping'):
        pass
 
    @abstractmethod
-   def on_variable(self, variable):
+   def on_variable(self, variable: 'Variable'):
        pass
 
    @abstractmethod
-   def on_assign(self, assign):
+   def on_assign(self, assign: 'Assign'):
        pass
 
    @abstractmethod
-   def on_logical(self, logical):
+   def on_logical(self, logical: 'Logical'):
        pass
 
    @abstractmethod
-   def on_call(self, call):
+   def on_call(self, call: 'Call'):
        pass
 
    @abstractmethod
-   def on_get(self, get):
+   def on_get(self, get: 'Get'):
        pass
 
    @abstractmethod
-   def on_set_prop(self, setprop):
+   def on_set_prop(self, setprop: 'SetProp'):
        pass
 
    @abstractmethod
-   def on_this_expr(self, thisexpr):
+   def on_this_expr(self, thisexpr: 'ThisExpr'):
        pass
 
    @abstractmethod
-   def on_super_expr(self, superexpr):
+   def on_super_expr(self, superexpr: 'SuperExpr'):
        pass
 
 
@@ -169,39 +169,39 @@ class SuperExpr(Expr):
 
 class StmtOperation(ABC):
    @abstractmethod
-   def on_expression(self, expression):
+   def on_expression(self, expression: 'Expression'):
        pass
 
    @abstractmethod
-   def on_print(self, print):
+   def on_print(self, print: 'Print'):
        pass
 
    @abstractmethod
-   def on_var(self, var):
+   def on_var(self, var: 'Var'):
        pass
 
    @abstractmethod
-   def on_block(self, block):
+   def on_block(self, block: 'Block'):
        pass
 
    @abstractmethod
-   def on_function(self, function):
+   def on_function(self, function: 'Function'):
        pass
 
    @abstractmethod
-   def on_if_else(self, ifelse):
+   def on_if_else(self, ifelse: 'IfElse'):
        pass
 
    @abstractmethod
-   def on_while_loop(self, whileloop):
+   def on_while_loop(self, whileloop: 'WhileLoop'):
        pass
 
    @abstractmethod
-   def on_return_stmt(self, returnstmt):
+   def on_return_stmt(self, returnstmt: 'ReturnStmt'):
        pass
 
    @abstractmethod
-   def on_class_decl(self, classdecl):
+   def on_class_decl(self, classdecl: 'ClassDecl'):
        pass
 
 

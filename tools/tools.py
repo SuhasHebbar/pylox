@@ -65,10 +65,10 @@ class {parent_class}(ABC):
     ast = parent_class_declaration
     class_list = []
     for template in templates:
-        class_, *init_arguments = map(lambda x: x.strip(' '), template.split('|'))
+        class_, *init_arguments_list = map(lambda x: x.strip(' '), template.split('|'))
         class_list.append(class_)
-        assert len(init_arguments) == 1
-        init_arguments = init_arguments[0]
+        assert len(init_arguments_list) == 1
+        init_arguments = init_arguments_list[0]
         class_template = ''
         class_template += f'class {class_}({parent_class}):\n'
         class_template += f'    def __init__(self, {init_arguments}):\n'
@@ -86,7 +86,7 @@ class {parent_class}(ABC):
     ast_pre = f'class {parent_class}Operation(ABC):\n'
     for class_ in class_list:
         ast_pre += f'   @abstractmethod\n'
-        ast_pre += f'   def on_{camelCase_to_snake_case(class_)}(self, {class_.lower()}):\n'
+        ast_pre += f'   def on_{camelCase_to_snake_case(class_)}(self, {class_.lower()}: \'{class_}\'):\n'
         ast_pre += f'       pass\n\n'
     ast_pre += ast
 
